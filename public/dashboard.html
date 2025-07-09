@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        select,
+        button {
+            padding: 0.6rem;
+            margin: 0.5rem 0.8rem 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.7rem;
+        }
+
+        .day {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-height: 120px;
+            transition: box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .day:hover {
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .day strong {
+            font-weight: bold;
+            margin-bottom: 0.4rem;
+            display: block;
+            color: #555;
+        }
+
+        .task {
+            background: linear-gradient(135deg, #007bff, #00aaff);
+            color: white;
+            padding: 0.4rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .task:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -1.6rem;
+            left: 0;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            white-space: pre;
+            pointer-events: none;
+        }
+
+        /* Popup */
+        #taskPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 350px;
+        }
+
+        #taskPopup input,
+        #taskPopup textarea,
+        #taskPopup select {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        #taskMsg {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Task Dashboard</h2>
+
+    <label for="monthSelect">Month:</label>
+    <select id="monthSelect"></select>
+
+    <label for="userSelect">Select User:</label>
+    <select id="userSelect"></select>
+
+    <button id="openPopupBtn">➕ Add Task</button>
+
+    <div class="calendar" id="calendar"></div>
+
+    <div id="hoverTooltip" style="
+    position: absolute;
+    display: none;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    max-width: 240px;
+    z-index: 9999;
+    pointer-events: none;
+  "></div>
+
+    <!-- Task Assignment Popup -->
+    <div id="taskPopup">
+        <h3>Assign Task</h3>
+        <form id="taskForm">
+            <label>Assign To:</label>
+            <select id="assignUser" required></select>
+
+            <label>Task Name:</label>
+            <input type="text" id="taskName" required />
+
+            <label>Description (optional):</label>
+            <textarea id="taskDesc"></textarea>
+
+            <label>Start Date & Time:</label>
+            <input type="datetime-local" id="start" required />
+
+            <label>End Date & Time:</label>
+            <input type="datetime-local" id="end" required />
+
+            <button type="submit">Assign Task</button>
+            <button type="button" id="closePopupBtn">Cancel</button>
+
+            <div id="taskMsg"></div>
+        </form>
+    </div>
+
+    <script>
+        const calendar = document.getElementById("calendar");
+        const monthSelect = document.getElementById("monthSelect");
+        const userSelect = document.getElementById("userSelect");
+        const assignUser = document.getElementById("assignUser");
+        const openPopupBtn = document.getElementById("openPopupBtn");
+        const closePopupBtn = document.getElementById("closePopupBtn");
+        const taskPopup = document.getElementById("taskPopup");
+        const taskForm = document.getElementById("taskForm");
+        const taskMsg = document.getElementById("taskMsg");
+
+        // Build month dropdown
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"];
+        monthNames.forEach((month, index) => {
+            const opt = document.createElement("option");
+            opt.value = index;
+            opt.textContent = month;
+            monthSelect.appendChild(opt);
+        });
+
+        // Build calendar grid
+        function buildCalendar(monthIndex) {
+            calendar.innerHTML = "";
+            const year = new Date().getFullYear();
+            const days = new Date(year, monthIndex + 1, 0).getDate();
+
+            for (let i = 1; i <= days; i++) {
+                const box = document.createElement("div");
+                box.className = "day";
+                box.dataset.day = i;
+                box.innerHTML = `<strong>${i}</strong>`;
+                calendar.appendChild(box);
+            }
+        }
+
+        // Load users for dropdowns
+        async function loadUsers() {
+            const res = await fetch("/api/users");
+            const users = await res.json();
+
+            [userSelect, assignUser].forEach(select => {
+                select.innerHTML = "";
+                users.forEach(user => {
+                    const opt = document.createElement("option");
+                    opt.value = user;
+                    opt.textContent = user;
+                    select.appendChild(opt);
+                });
+            });
+
+            // Trigger task load
+            loadTasksForUser(userSelect.value, monthSelect.value);
+        }
+
+        // Load tasks by user and month
+        async function loadTasksForUser(username, monthIndex) {
+            const res = await fetch(`/api/tasks?user=${username}`);
+            const tasks = await res.json();
+            buildCalendar(parseInt(monthIndex));
+
+            tasks.forEach(task => {
+                let current = new Date(task.start);
+                const end = new Date(task.end);
+                const targetMonth = parseInt(monthIndex);
+
+                while (current <= end) {
+                    if (current.getMonth() === targetMonth) {
+                        const day = current.getDate();
+                        const box = [...calendar.children].find(d => parseInt(d.dataset.day) === day);
+                        if (box) {
+                            const tooltip = document.getElementById("hoverTooltip");
+
+                            const el = document.createElement("div");
+                            el.className = "task";
+                            el.textContent = task.taskName;
+
+                            const tooltipText = `📝 ${task.taskDesc || "NA"}\n⏱ ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}`;
+
+                            el.addEventListener("mousemove", (e) => {
+                                tooltip.style.display = "block";
+                                tooltip.style.left = e.pageX + 15 + "px";
+                                tooltip.style.top = e.pageY + 15 + "px";
+                                tooltip.textContent = tooltipText;
+                            });
+
+                            el.addEventListener("mouseleave", () => {
+                                tooltip.style.display = "none";
+                            });
+
+                            box.appendChild(el);
+                        }
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
+            });
+        }
+
+        // Popup logic
+        openPopupBtn.addEventListener("click", () => {
+            taskPopup.style.display = "block";
+            taskMsg.textContent = "";
+        });
+
+        closePopupBtn.addEventListener("click", () => {
+            taskPopup.style.display = "none";
+            taskForm.reset();
+        });
+
+        taskForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const payload = {
+                assignTo: assignUser.value,
+                taskName: taskName.value,
+                taskDesc: taskDesc.value,
+                start: start.value,
+                end: end.value
+            };
+
+            const res = await fetch("/api/add-task", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            taskMsg.textContent = result.success ? "✅ Task Assigned!" : "❌ Assignment Failed";
+
+            if (result.success) {
+                setTimeout(() => {
+                    taskPopup.style.display = "none";
+                    taskForm.reset();
+                    loadTasksForUser(userSelect.value, monthSelect.value);
+                }, 1500);
+            }
+        });
+
+        // React to user/month change
+        userSelect.addEventListener("change", () => {
+            loadTasksForUser(userSelect.value, monthSelect.value);
+        });
+        monthSelect.addEventListener("change", () => {
+            loadTasksForUser(userSelect.value, monthSelect.value);
+        });
+
+        // Initialize
+        monthSelect.value = new Date().getMonth();
+        loadUsers();
+    </script>
+</body>
+
+</html>

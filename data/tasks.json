@@ -1,0 +1,9 @@
+[
+  {
+    "assignTo": "alice",
+    "taskName": "Prepare demo",
+    "taskDesc": "Set up camera and test feed",
+    "start": "2025-07-09T10:00:00",
+    "end": "2025-07-09T11:30:00"
+  }
+]
