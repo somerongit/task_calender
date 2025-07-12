@@ -3,8 +3,36 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Dashboard</title>
+    <title>Responsive Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-header .logo {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        #logoutBtn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #logoutBtn:hover {
+            background: #c82333;
+        }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: #f0f2f5;
@@ -17,10 +45,16 @@
             color: #333;
         }
 
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
         select,
         button {
             padding: 0.6rem;
-            margin: 0.5rem 0.8rem 0.5rem 0;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 1rem;
@@ -29,19 +63,12 @@
         button {
             background-color: #007bff;
             color: white;
-            cursor: pointer;
             border: none;
+            cursor: pointer;
         }
 
         button:hover {
             background-color: #0056b3;
-        }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1rem;
         }
 
         .calendar {
@@ -56,49 +83,27 @@
             border-radius: 8px;
             padding: 0.5rem;
             min-height: 120px;
-            transition: box-shadow 0.2s ease;
             position: relative;
-        }
-
-        .day:hover {
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
         }
 
         .day strong {
             font-weight: bold;
+            color: #555;
             margin-bottom: 0.4rem;
             display: block;
-            color: #555;
         }
 
         .task {
-            background: linear-gradient(135deg, #007bff, #00aaff);
+            background: #007bff;
             color: white;
-            padding: 0.4rem;
+            padding: 0.3rem;
             border-radius: 6px;
             margin-bottom: 0.25rem;
             font-size: 0.85rem;
-            position: relative;
-            overflow: hidden;
-            cursor: default;
         }
 
-        .task:hover::after {
-            content: attr(title);
-            position: absolute;
-            bottom: -1.6rem;
-            left: 0;
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 0.3rem 0.6rem;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            white-space: pre;
-            pointer-events: none;
-        }
-
-        /* Popup */
-        #taskPopup {
+        #dayPopup {
             display: none;
             position: fixed;
             top: 50%;
@@ -109,12 +114,32 @@
             border-radius: 10px;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            width: 350px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        #taskPopup input,
-        #taskPopup textarea,
-        #taskPopup select {
+
+        #taskPopup,
+        #editPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        input,
+        textarea,
+        select {
             width: 100%;
             padding: 0.5rem;
             margin-bottom: 0.8rem;
@@ -123,107 +148,172 @@
             border-radius: 6px;
         }
 
-        #taskMsg {
+        .popup-header {
+            margin-bottom: 1rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .popup-close {
+            background: #bbb;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
             margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: green;
+            cursor: pointer;
+        }
+
+        .task-card {
+            position: relative;
+            padding-right: 2rem;
+            /* Space for icon */
+        }
+
+        .task-card small {
+            display: block;
+            margin-top: 0.3rem;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .calendar {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .task.assigned {
+            background: #f39c12;
+        }
+
+        .task.completed {
+            background: #2ecc71;
+        }
+
+        .editBtn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #007bff;
+            padding: 0.2rem;
+            margin-left: 0.5rem;
+        }
+
+        .editBtn:hover {
+            color: #0056b3;
         }
     </style>
 </head>
 
 <body>
-    <h2>Task Dashboard</h2>
+    <div class="dashboard-header">
+        <div class="logo">📋 TaskBoard</div>
+        <button id="logoutBtn">Logout</button>
+    </div>
 
-    <label for="monthSelect">Month:</label>
-    <select id="monthSelect"></select>
-
-    <label for="userSelect">Select User:</label>
-    <select id="userSelect"></select>
-
-    <button id="openPopupBtn">➕ Add Task</button>
+    <div class="controls">
+        <select id="monthSelect"></select>
+        <select id="userSelect"></select>
+        <button id="openPopupBtn">➕ Add Task</button>
+    </div>
 
     <div class="calendar" id="calendar"></div>
 
-    <div id="hoverTooltip" style="
-    position: absolute;
-    display: none;
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 0.6rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    max-width: 240px;
-    z-index: 9999;
-    pointer-events: none;
-  "></div>
-
-    <!-- Task Assignment Popup -->
+    <!-- Add Task Popup -->
     <div id="taskPopup">
-        <h3>Assign Task</h3>
+        <div class="popup-header">Assign Task</div>
         <form id="taskForm">
-            <label>Assign To:</label>
             <select id="assignUser" required></select>
-
-            <label>Task Name:</label>
-            <input type="text" id="taskName" required />
-
-            <label>Description (optional):</label>
-            <textarea id="taskDesc"></textarea>
-
-            <label>Start Date & Time:</label>
+            <input type="text" id="taskName" placeholder="Task Name" required />
+            <textarea id="taskDesc" placeholder="Description (optional)"></textarea>
             <input type="datetime-local" id="start" required />
-
-            <label>End Date & Time:</label>
             <input type="datetime-local" id="end" required />
-
             <button type="submit">Assign Task</button>
-            <button type="button" id="closePopupBtn">Cancel</button>
-
+            <button type="button" class="popup-close" id="closePopupBtn">Cancel</button>
             <div id="taskMsg"></div>
         </form>
     </div>
 
+    <!-- Day Task List Popup -->
+    <div id="dayPopup">
+        <div class="popup-header">Tasks on <span id="popupDate"></span></div>
+        <div id="dayTaskList"></div>
+        <button class="popup-close" id="closeDayPopupBtn">Close</button>
+    </div>
+
+    <!-- Edit Task Popup -->
+    <div id="editPopup">
+        <div class="popup-header">Edit Task</div>
+        <form id="editForm">
+            <input type="hidden" id="editId" />
+            <input type="text" id="editName" required />
+            <textarea id="editDesc"></textarea>
+            <input type="datetime-local" id="editStart" required />
+            <input type="datetime-local" id="editEnd" required />
+            <select id="editStatus">
+                <option value="assigned">Assigned</option>
+                <option value="completed">Completed</option>
+            </select>
+            <button type="submit">Save Changes</button>
+            <button type="button" class="popup-close" id="closeEditPopupBtn">Cancel</button>
+            <div id="editMsg"></div>
+        </form>
+    </div>
+
     <script>
+        // Auth for task add and update
+        const role = document.cookie.split("; ").find(row => row.startsWith("role="))?.split("=")[1];
+        const openPopupBtn = document.getElementById("openPopupBtn");
+
+        if (role !== "admin") {
+            openPopupBtn.style.display = "none"; // hide Add button
+        }
+        // Auth for task add and update
+
         const calendar = document.getElementById("calendar");
         const monthSelect = document.getElementById("monthSelect");
         const userSelect = document.getElementById("userSelect");
         const assignUser = document.getElementById("assignUser");
-        const openPopupBtn = document.getElementById("openPopupBtn");
+
         const closePopupBtn = document.getElementById("closePopupBtn");
         const taskPopup = document.getElementById("taskPopup");
         const taskForm = document.getElementById("taskForm");
         const taskMsg = document.getElementById("taskMsg");
 
-        // Build month dropdown
+        const dayPopup = document.getElementById("dayPopup");
+        const closeDayPopupBtn = document.getElementById("closeDayPopupBtn");
+        const dayTaskList = document.getElementById("dayTaskList");
+        const popupDate = document.getElementById("popupDate");
+
+        const editPopup = document.getElementById("editPopup");
+        const closeEditPopupBtn = document.getElementById("closeEditPopupBtn");
+        const editForm = document.getElementById("editForm");
+
+        const editId = document.getElementById("editId");
+        const editName = document.getElementById("editName");
+        const editDesc = document.getElementById("editDesc");
+        const editStart = document.getElementById("editStart");
+        const editEnd = document.getElementById("editEnd");
+        const editStatus = document.getElementById("editStatus");
+        const editMsg = document.getElementById("editMsg");
+
         const monthNames = ["January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"];
-        monthNames.forEach((month, index) => {
+
+        monthNames.forEach((m, i) => {
             const opt = document.createElement("option");
-            opt.value = index;
-            opt.textContent = month;
+            opt.value = i;
+            opt.textContent = m;
             monthSelect.appendChild(opt);
         });
 
-        // Build calendar grid
-        function buildCalendar(monthIndex) {
-            calendar.innerHTML = "";
-            const year = new Date().getFullYear();
-            const days = new Date(year, monthIndex + 1, 0).getDate();
-
-            for (let i = 1; i <= days; i++) {
-                const box = document.createElement("div");
-                box.className = "day";
-                box.dataset.day = i;
-                box.innerHTML = `<strong>${i}</strong>`;
-                calendar.appendChild(box);
-            }
-        }
-
-        // Load users for dropdowns
         async function loadUsers() {
             const res = await fetch("/api/users");
             const users = await res.json();
-
             [userSelect, assignUser].forEach(select => {
                 select.innerHTML = "";
                 users.forEach(user => {
@@ -233,65 +323,153 @@
                     select.appendChild(opt);
                 });
             });
-
-            // Trigger task load
             loadTasksForUser(userSelect.value, monthSelect.value);
         }
 
-        // Load tasks by user and month
-        async function loadTasksForUser(username, monthIndex) {
-            const res = await fetch(`/api/tasks?user=${username}`);
-            const tasks = await res.json();
-            buildCalendar(parseInt(monthIndex));
+        function buildCalendar(monthIndex) {
 
-            tasks.forEach(task => {
-                let current = new Date(task.start);
-                const end = new Date(task.end);
-                const targetMonth = parseInt(monthIndex);
+            calendar.innerHTML = "";
+            const year = new Date().getFullYear();
+            const days = new Date(year, parseInt(monthIndex) + 1, 0).getDate();
 
-                while (current <= end) {
-                    if (current.getMonth() === targetMonth) {
-                        const day = current.getDate();
-                        const box = [...calendar.children].find(d => parseInt(d.dataset.day) === day);
-                        if (box) {
-                            const tooltip = document.getElementById("hoverTooltip");
+            for (let i = 1; i <= days; i++) {
+                const box = document.createElement("div");
+                box.className = "day";
+                box.dataset.day = i;
+                box.innerHTML = `<strong>${i}</strong>`;
 
-                            const el = document.createElement("div");
-                            el.className = "task";
-                            el.textContent = task.taskName;
+                box.addEventListener("click", () => {
+                    const selectedDay = i;
+                    const selectedMonth = parseInt(monthSelect.value);
+                    const year = new Date().getFullYear();
 
-                            const tooltipText = `📝 ${task.taskDesc || "NA"}\n⏱ ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}`;
+                    const dayStart = new Date(year, selectedMonth, selectedDay, 0, 0, 0);
+                    const dayEnd = new Date(year, selectedMonth, selectedDay, 23, 59, 59);
 
-                            el.addEventListener("mousemove", (e) => {
-                                tooltip.style.display = "block";
-                                tooltip.style.left = e.pageX + 15 + "px";
-                                tooltip.style.top = e.pageY + 15 + "px";
-                                tooltip.textContent = tooltipText;
+                    // Fetch tasks and filter by date range
+                    fetch(`/api/tasks?user=${userSelect.value}`)
+                        .then(res => res.json())
+                        .then(tasks => {
+                            const dailyTasks = tasks.filter(t => {
+                                const taskStart = new Date(t.start);
+                                const taskEnd = new Date(t.end);
+                                return (
+                                    taskStart <= dayEnd && taskEnd >= dayStart
+                                );
                             });
 
-                            el.addEventListener("mouseleave", () => {
-                                tooltip.style.display = "none";
-                            });
+                            popupDate.textContent = `${selectedDay} ${monthNames[selectedMonth]}`;
+                            dayTaskList.innerHTML = "";
 
-                            box.appendChild(el);
-                        }
-                    }
-                    current.setDate(current.getDate() + 1);
-                }
-            });
+                            if (role === "admin") {
+                                dailyTasks.forEach(task => {
+                                    const card = document.createElement("div");
+                                    card.className = "task-card";
+                                    card.innerHTML = `
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <strong>${task.status === "completed" ? "✅" : "📌"} ${task.taskName}</strong>
+    <button data-id="${task.id}" class="editBtn" title="Edit Task">✏️</button>
+  </div>
+  <small>${task.taskDesc || "No description"}</small>
+  <small>🕒 ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}</small>
+  <small>Status: ${task.status}</small>
+`;
+
+
+                                    dayTaskList.appendChild(card);
+                                });
+
+                                dayPopup.style.display = "block";
+
+                                // Edit buttons inside day popup
+                                document.querySelectorAll(".editBtn").forEach(btn => {
+                                    btn.addEventListener("click", () => {
+                                        const taskId = btn.getAttribute("data-id");
+                                        const task = dailyTasks.find(t => t.id == taskId);
+                                        if (!task) return;
+
+                                        editId.value = task.id;
+                                        editName.value = task.taskName;
+                                        editDesc.value = task.taskDesc;
+                                        editStart.value = task.start.slice(0, 16);
+                                        editEnd.value = task.end.slice(0, 16);
+                                        editStatus.value = task.status;
+
+                                        editPopup.style.display = "block";
+                                        dayPopup.style.display = "none";
+                                        editMsg.textContent = "";
+                                    });
+                                });
+                            }
+                            else {
+                                dailyTasks.forEach(task => {
+                                    const card = document.createElement("div");
+                                    card.className = "task-card";
+                                    card.innerHTML = `
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <strong>${task.status === "completed" ? "✅" : "📌"} ${task.taskName}</strong>
+  </div>
+  <small>${task.taskDesc || "No description"}</small>
+  <small>🕒 ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}</small>
+  <small>Status: ${task.status}</small>
+`;
+
+
+                                    dayTaskList.appendChild(card);
+                                });
+
+                                dayPopup.style.display = "block";
+                            }
+
+                        });
+                });
+                calendar.appendChild(box);
+            }
         }
 
-        // Popup logic
-        openPopupBtn.addEventListener("click", () => {
-            taskPopup.style.display = "block";
-            taskMsg.textContent = "";
+        // Edit task submit
+        editForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const payload = {
+                id: editId.value,
+                assignTo: userSelect.value,
+                taskName: editName.value,
+                taskDesc: editDesc.value,
+                start: editStart.value,
+                end: editEnd.value,
+                status: editStatus.value
+            };
+
+            const res = await fetch("/api/update-task", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            editMsg.textContent = result.success ? "✅ Updated!" : "❌ Failed";
+            if (result.success) {
+                setTimeout(() => {
+                    editPopup.style.display = "none";
+                    loadTasksForUser(userSelect.value, monthSelect.value);
+                }, 1500);
+            }
         });
 
+        // Init handlers
+        closeDayPopupBtn.addEventListener("click", () => dayPopup.style.display = "none");
+        closeEditPopupBtn.addEventListener("click", () => editPopup.style.display = "none");
+
+        userSelect.addEventListener("change", () => loadTasksForUser(userSelect.value, monthSelect.value));
+        monthSelect.addEventListener("change", () => loadTasksForUser(userSelect.value, monthSelect.value));
+        openPopupBtn.addEventListener("click", () => taskPopup.style.display = "block");
         closePopupBtn.addEventListener("click", () => {
             taskPopup.style.display = "none";
             taskForm.reset();
+            taskMsg.textContent = "";
         });
 
+        // Add task submit
         taskForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const payload = {
@@ -309,7 +487,7 @@
             });
 
             const result = await res.json();
-            taskMsg.textContent = result.success ? "✅ Task Assigned!" : "❌ Assignment Failed";
+            taskMsg.textContent = result.success ? "✅ Task Assigned!" : "❌ Failed";
 
             if (result.success) {
                 setTimeout(() => {
@@ -320,17 +498,64 @@
             }
         });
 
-        // React to user/month change
-        userSelect.addEventListener("change", () => {
-            loadTasksForUser(userSelect.value, monthSelect.value);
-        });
-        monthSelect.addEventListener("change", () => {
-            loadTasksForUser(userSelect.value, monthSelect.value);
-        });
+        function loadTasksForUser(username, monthIndex) {
+            buildCalendar(monthIndex);
 
-        // Initialize
+            fetch(`/api/tasks?user=${username}`)
+                .then(res => res.json())
+                .then(tasks => {
+                    // buildCalendar(monthIndex);
+
+                    tasks.forEach(task => {
+                        let current = new Date(task.start);
+                        const end = new Date(task.end);
+                        const targetMonth = parseInt(monthIndex);
+
+                        while (current <= end) {
+                            if (current.getMonth() === targetMonth) {
+                                const day = current.getDate();
+                                const box = [...calendar.children].find(d => parseInt(d.dataset.day) === day);
+                                if (box) {
+                                    // const el = document.createElement("div");
+                                    // el.className = "task";
+                                    // el.textContent = task.taskName;
+                                    // el.title = `📝 ${task.taskDesc || "No description"}\n⏱ ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}`;
+                                    // box.appendChild(el);
+                                    const el = document.createElement("div");
+                                    el.className = "task";
+
+                                    // Set color class by status
+                                    const statusClass = task.status === "completed" ? "completed" : "assigned";
+                                    el.classList.add(statusClass);
+
+                                    // Use icon + name
+                                    el.innerHTML = `✅ ${task.taskName}`;
+                                    if (task.status === "assigned") {
+                                        el.innerHTML = `📌 ${task.taskName}`;
+                                    }
+
+                                    el.title = `📝 ${task.taskDesc || "No description"}\n⏱ ${new Date(task.start).toLocaleString()} - ${new Date(task.end).toLocaleString()}`;
+                                    box.appendChild(el);
+
+                                }
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    });
+                });
+        }
+
         monthSelect.value = new Date().getMonth();
         loadUsers();
+        logoutBtn.addEventListener("click", () => {
+            // Clear cookies by setting them expired
+            document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+            // Redirect to login page or home
+            window.location.href = "/";
+        });
+
     </script>
 </body>
 
